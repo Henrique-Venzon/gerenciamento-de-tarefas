@@ -2,11 +2,32 @@
 session_start();
 include_once('include/conexao.php');
 
+// Função para salvar edições
+if (isset($_POST['salvar'])) {
+    $id_tarefa = $_POST['id_tarefa'];
+    $descricao = $_POST['descricao'];
+    $setor = $_POST['setor'];
+    $prioridade = $_POST['prioridade'];
+
+    $sql = "UPDATE tarefa SET descricao = ?, setor = ?, prioridade = ? WHERE id = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("sssi", $descricao, $setor, $prioridade, $id_tarefa);
+
+    if ($stmt->execute()) {
+        $_SESSION['mensagem'] = "Tarefa atualizada com sucesso.";
+    } else {
+        $_SESSION['mensagem'] = "Erro ao atualizar tarefa.";
+    }
+
+    header("Location: gerenciador.php");
+    exit;
+}
+
 // Função para avançar ou retroceder o status
 if (isset($_POST['mudar_status'])) {
     $id_tarefa = $_POST['id_tarefa'];
-    $direcao = $_POST['direcao']; // 'avancar' ou 'retroceder'
-    
+    $direcao = $_POST['direcao'];
+
     // Consulta o status atual
     $sql = "SELECT status FROM tarefa WHERE id = ?";
     $stmt = $conn->prepare($sql);
@@ -14,7 +35,7 @@ if (isset($_POST['mudar_status'])) {
     $stmt->execute();
     $result = $stmt->get_result();
     $row = $result->fetch_assoc();
-    
+
     // Define a ordem dos status
     $status_ordem = ["A fazer", "Fazendo", "Pronto"];
     $status_atual = $row['status'];
@@ -27,14 +48,15 @@ if (isset($_POST['mudar_status'])) {
         $indice--;
     }
     $novo_status = $status_ordem[$indice];
-    
+
     // Atualiza o status no banco de dados
     $sql = "UPDATE tarefa SET status = ? WHERE id = ?";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("si", $novo_status, $id_tarefa);
     $stmt->execute();
-    
+
     header("Location: gerenciador.php");
+    exit;
 }
 
 // Função para excluir tarefa
@@ -45,6 +67,7 @@ if (isset($_POST['excluir'])) {
     $stmt->bind_param("i", $id_tarefa);
     $stmt->execute();
     header("Location: gerenciador.php");
+    exit;
 }
 
 // Consulta para buscar as tarefas
@@ -61,6 +84,7 @@ if ($result->num_rows > 0) {
 } else {
     echo "Nenhuma tarefa encontrada.";
 }
+
 $conn->close();
 ?>
 
